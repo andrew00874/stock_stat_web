@@ -322,6 +322,6 @@ def parse_options_data(call_df, put_df, ticker):
     put_box_min = get_box_range_weighted(put_df, current_price, strike_distance_limit=0.3)
     call_box_max = get_box_range_weighted(call_df, current_price, strike_distance_limit=0.3)
     if put_box_min and call_box_max:
-        report_text += f"📦 시장 참여자 예상 박스권: ${put_box_min:.1f} ~ ${call_box_max:.1f}"
+        report_text += f"\n📦 시장 참여자 예상 박스권: ${put_box_min:.1f} ~ ${call_box_max:.1f}"
 
     return report_text.replace('\n', '<br>')
