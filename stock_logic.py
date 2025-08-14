@@ -115,7 +115,33 @@ def get_box_range_weighted(df, current_price, strike_distance_limit=0.25):
     best_strike = df_filtered.loc[df_filtered["WeightedScore"].idxmax(), "strike"]
     
     return best_strike
+# stock_logic.py 파일에 이 함수를 추가하세요.
 
+@lru_cache(maxsize=32)
+def fetch_options_data(ticker, expiry_date=None):
+    """
+    yfinance를 사용하여 특정 만기일의 옵션 데이터를 가져옵니다.
+    """
+    try:
+        stock = yf.Ticker(ticker)
+        
+        # yfinance는 만기일 문자열(YYYY-MM-DD)을 직접 사용합니다.
+        options = stock.option_chain(expiry_date)
+        
+        # 콜과 풋 옵션 데이터를 바로 얻을 수 있습니다.
+        call_options = options.calls
+        put_options = options.puts
+
+        if call_options.empty or put_options.empty:
+            print(f"{ticker}의 {expiry_date} 만기일 데이터가 비어있습니다.")
+            return None
+
+        return call_options, put_options, ticker
+
+    except Exception as e:
+        print(f"yfinance로 데이터 가져오기 오류: {e}")
+        return None
+    
 def clean_numeric_columns(df, columns):
     """숫자형 칼럼 정리를 위한 헬퍼 함수"""
     # yfinance는 대부분의 데이터를 숫자형으로 잘 제공하므로, 불필요한 변환 대신 타입 검증 및 채우기 위주로 변경
