@@ -44,14 +44,17 @@
         <div class="card">
           <h3>Put/Call Ratio</h3>
           <p class="value">{{ data.market_sentiment.put_call_ratio }}</p>
+          <small>{{ data.market_sentiment.pcr_msg }}</small>
         </div>
         <div class="card">
           <h3>IV Skew</h3>
           <p class="value">{{ data.market_sentiment.iv_skew_percent }}%</p>
+          <small>{{ data.market_sentiment.iv_skew_msg }}</small>
         </div>
         <div class="card">
           <h3>평균 변동성</h3>
           <p class="value">{{ data.market_sentiment.mean_iv_percent }}%</p>
+          <small>{{ data.market_sentiment.mean_iv_msg }}</small>
         </div>
         <div class="card">
           <h3>데이터 신뢰도</h3>

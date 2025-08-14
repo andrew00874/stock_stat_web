@@ -118,6 +118,10 @@ def analyze_data_for_visualization(ticker, expiry_date):
     total_put_volume = put_df['volume'].sum()
     put_call_ratio = total_put_volume / total_call_volume if total_call_volume > 0 else float('inf')
 
+    if put_call_ratio >= 1.2: pcr_msg = "극단적 비관 (매도 과열)"
+    elif put_call_ratio >= 1.0: pcr_msg = "비관적 (하락 우려)"
+    elif put_call_ratio >= 0.7: pcr_msg = "낙관적 (상승 기대)"
+    else : pcr_msg= "극단적 낙관 (매수 과열)"
     # 등가격(ATM) 옵션 찾기 및 IV Skew 계산
     try:
         atm_call_row = call_df.iloc[(call_df['strike'] - current_price).abs().idxmin()]
@@ -132,6 +136,12 @@ def analyze_data_for_visualization(ticker, expiry_date):
     iv_diff = abs(atm_call_iv - atm_put_iv) * 100
     high_iv = (mean_iv > 30 or iv_diff > 5)
 
+    if (iv_skew > 5): iv_skew_msg = "극단적인 공포"
+    elif (iv_skew >= 1): iv_skew_msg= "일반적인 하락 경계감"
+    elif (iv_skew >= -1): iv_skew_msg= "중립"
+    else: iv_skew_msg= "강한 낙관 혹은 투기적"
+
+    mean_iv_msg = "종목의 특성에 따라 크게 차이가 날 수 있습니다."
     # --- 2-3. 신뢰도 지수 계산 ---
     try:
         today = datetime.datetime.now(datetime.timezone.utc)
@@ -200,8 +210,11 @@ def analyze_data_for_visualization(ticker, expiry_date):
         "strategy": strategy,
         "market_sentiment": {
             "put_call_ratio": round(put_call_ratio, 2),
+            "pcr_msg" : pcr_msg,
             "iv_skew_percent": round(iv_skew, 2),
-            "mean_iv_percent": round(mean_iv, 1)
+            "iv_skew_msg" : iv_skew_msg,
+            "mean_iv_percent": round(mean_iv, 1),
+            "mean_iv_msg" : mean_iv_msg,
         },
         "reliability": {
             "score": reliability_index,
