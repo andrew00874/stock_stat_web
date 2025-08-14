@@ -294,34 +294,34 @@ def parse_options_data(call_df, put_df, ticker):
             strategy = "👀 조심스러운 상승 기대감 (거래 약하지만 방향성 존재)"
 
     report_text = f"""
-    📌 {ticker} 옵션 데이터 분석 보고서\n
+    📌 {ticker} 옵션 데이터 분석 보고서
 
-    {strategy}\n
-    📅 기준 옵션 만기일: {expiry_date}\n
-    💰 현재 주가: ${current_price}\n
-\n
-    🔥 거래량 TOP 옵션\n
-    - 📈 콜 옵션 행사가: ${most_traded_call_strike}\n
-        - Volume : {int(most_traded_call_volume)}\n
-        - OI : {int(most_traded_call_oi)}\n
-    - 📉 풋 옵션 행사가: ${most_traded_put_strike} \n
-        - Volume : {int(most_traded_put_volume)}\n
-        - OI : {int(most_traded_put_oi)}\n
-\n
-    📊 시장 심리 분석\n
-    - 🔄 Put/Call Ratio: {put_call_ratio:.2f}\n
-    - 🔄 IV Skew (Put - Call): {iv_skew:.2f}%\n
-    - 📌 실시간 변동성: {mean_iv:.1f}%\n
-\n
-    📈 신뢰도 분석\n
-    - 🧮 신뢰도 지수: {reliability_index} / 1.00\n
-    - 📘 해석: {reliability_msg}\n
+    {strategy}
+    📅 기준 옵션 만기일: {expiry_date}
+    💰 현재 주가: ${current_price}
+
+    🔥 거래량 TOP 옵션
+    - 📈 콜 옵션 행사가: ${most_traded_call_strike}
+        - Volume : {int(most_traded_call_volume)}
+        - OI : {int(most_traded_call_oi)}
+    - 📉 풋 옵션 행사가: ${most_traded_put_strike} 
+        - Volume : {int(most_traded_put_volume)}
+        - OI : {int(most_traded_put_oi)}
+
+    📊 시장 심리 분석
+    - 🔄 Put/Call Ratio: {put_call_ratio:.2f}
+    - 🔄 IV Skew (Put - Call): {iv_skew:.2f}%
+    - 📌 실시간 변동성: {mean_iv:.1f}%
+
+    📈 신뢰도 분석
+    - 🧮 신뢰도 지수: {reliability_index} / 1.00
+    - 📘 해석: {reliability_msg}
 
     """.strip()
 
     put_box_min = get_box_range_weighted(put_df, current_price, strike_distance_limit=0.3)
     call_box_max = get_box_range_weighted(call_df, current_price, strike_distance_limit=0.3)
     if put_box_min and call_box_max:
-        report_text += f"\n\n📦 시장 참여자 예상 박스권: ${put_box_min:.1f} ~ ${call_box_max:.1f}"
+        report_text += f"📦 시장 참여자 예상 박스권: ${put_box_min:.1f} ~ ${call_box_max:.1f}"
 
-    return report_text
+    return report_text.replace('\n', '<br>')
