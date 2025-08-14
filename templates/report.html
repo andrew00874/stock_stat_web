@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>분석 결과</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        max-width: 800px;
+        margin: auto;
+        padding: 20px;
+        line-height: 1.6;
+      }
+      .report-box {
+        border: 1px solid #ddd;
+        padding: 20px;
+        border-radius: 8px;
+        background-color: #f9f9f9;
+      }
+      a {
+        color: #007bff;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>분석 결과 📄</h1>
+    <div class="report-box">
+      <p>{{ report_content|safe }}</p>
+    </div>
+    <br />
+    <a href="/">↩️ 다른 티커 분석하기</a>
+    <p><small>주의: 분석 결과는 참고용이며 투자 권유가 아닙니다.</small></p>
+  </body>
+</html>
