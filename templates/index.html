@@ -2,102 +2,76 @@
 <html lang="ko">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>옵션 데이터 분석기</title>
+    <title>옵션 분석기</title>
+    <link rel="stylesheet" href="https://cdn.simplecss.org/simple.min.css" />
     <style>
-      body {
-        font-family: sans-serif;
+      main {
         max-width: 600px;
         margin: auto;
-        padding: 20px;
       }
-      .form-group {
-        margin-bottom: 15px;
-      }
-      label,
-      input,
-      select,
-      button {
-        display: block;
-        width: 100%;
-        padding: 10px;
-        box-sizing: border-box;
-      }
-      button {
-        background-color: #007bff;
-        color: white;
-        border: none;
-        cursor: pointer;
-      }
-      #loading {
+      .hidden {
         display: none;
       }
     </style>
-    <script
-      async
-      src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3645359139957527"
-      crossorigin="anonymous"
-    ></script>
   </head>
   <body>
-    <h1>옵션 데이터 분석기 📈</h1>
-
-    <form action="/report" method="post">
-      <div class="form-group">
-        <label for="ticker">티커명 (예: SPY, AAPL)</label>
-        <input type="text" id="ticker" name="ticker" required />
+    <header>
+      <h1>옵션 데이터 분석기</h1>
+      <p>분석할 주식 티커를 입력하세요. (예: SPY, AAPL, TSLA)</p>
+    </header>
+    <main>
+      <div>
+        <label for="ticker-input">티커:</label>
+        <input type="text" id="ticker-input" placeholder="SPY" />
+        <button id="fetch-button">만기일 불러오기</button>
       </div>
-      <button type="button" id="load-expiry-btn">만기일 불러오기</button>
+      <p id="message-area" class="notice"></p>
 
-      <div class="form-group">
-        <label for="expiry_date">만기일 선택</label>
-        <select id="expiry_date" name="expiry_date" required>
-          <option value="">먼저 티커를 입력하고 만기일을 불러오세요.</option>
-        </select>
-      </div>
+      <form id="report-form" action="/report" method="post" class="hidden">
+        <input type="hidden" name="ticker" id="hidden-ticker" />
+        <label for="expiry-select">만기일 선택:</label>
+        <select name="expiry_date" id="expiry-select"></select>
+        <button type="submit">분석 리포트 보기</button>
+      </form>
+    </main>
 
-      <p id="loading">만기일을 불러오는 중...</p>
-
-      <button type="submit">분석 시작</button>
-    </form>
     <script>
-      document
-        .getElementById("load-expiry-btn")
-        .addEventListener("click", async () => {
-          const ticker = document.getElementById("ticker").value;
-          if (!ticker) {
-            alert("티커명을 입력하세요!");
-            return;
+      const tickerInput = document.getElementById("ticker-input");
+      const fetchButton = document.getElementById("fetch-button");
+      const messageArea = document.getElementById("message-area");
+      const reportForm = document.getElementById("report-form");
+      const expirySelect = document.getElementById("expiry-select");
+      const hiddenTicker = document.getElementById("hidden-ticker");
+
+      fetchButton.addEventListener("click", async () => {
+        const ticker = tickerInput.value.trim().toUpperCase();
+        if (!ticker) {
+          messageArea.textContent = "티커를 입력해주세요.";
+          return;
+        }
+        messageArea.textContent = `${ticker} 만기일을 불러오는 중...`;
+        reportForm.classList.add("hidden");
+
+        try {
+          const response = await fetch(`/get-expiries?ticker=${ticker}`);
+          const data = await response.json();
+
+          if (response.ok) {
+            expirySelect.innerHTML = "";
+            data.forEach((date) => {
+              const option = new Option(date, date);
+              expirySelect.add(option);
+            });
+            hiddenTicker.value = ticker;
+            reportForm.classList.remove("hidden");
+            messageArea.textContent = `만기일을 선택하고 분석하세요.`;
+          } else {
+            messageArea.textContent = `오류: ${data.error}`;
           }
-
-          const select = document.getElementById("expiry_date");
-          const loading = document.getElementById("loading");
-
-          select.innerHTML = "<option>불러오는 중...</option>";
-          loading.style.display = "block";
-
-          try {
-            const response = await fetch(`/get-expiry-dates?ticker=${ticker}`);
-            const dates = await response.json();
-
-            select.innerHTML = ""; // 기존 옵션 삭제
-            if (dates.length > 0) {
-              dates.forEach((date) => {
-                const option = document.createElement("option");
-                option.value = date;
-                option.textContent = date;
-                select.appendChild(option);
-              });
-            } else {
-              select.innerHTML = '<option value="">만기일 없음</option>';
-            }
-          } catch (error) {
-            console.error("Error fetching expiry dates:", error);
-            select.innerHTML = '<option value="">오류 발생</option>';
-          } finally {
-            loading.style.display = "none";
-          }
-        });
+        } catch (error) {
+          messageArea.textContent = "서버 통신 중 오류가 발생했습니다.";
+        }
+      });
     </script>
   </body>
 </html>

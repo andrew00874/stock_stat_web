@@ -1,40 +1,249 @@
 <!DOCTYPE html>
 <html lang="ko">
   <head>
-    <script
-      async
-      src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3645359139957527"
-      crossorigin="anonymous"
-    ></script>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>분석 결과</title>
+    <title>{{ data.ticker }} 옵션 분석 리포트</title>
+    <link rel="stylesheet" href="https://cdn.simplecss.org/simple.min.css" />
     <style>
-      body {
-        font-family: sans-serif;
-        max-width: 800px;
-        margin: auto;
-        padding: 20px;
-        line-height: 1.6;
+      .grid-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+        margin: 2rem 0;
       }
-      .report-box {
-        border: 1px solid #ddd;
-        padding: 20px;
-        border-radius: 8px;
-        background-color: #f9f9f9;
+      .card {
+        padding: 1.5rem;
+        border: 1px solid var(--border);
+        border-radius: var(--border-radius);
+        text-align: center;
       }
-      a {
-        color: #007bff;
+      .card h3 {
+        margin-top: 0;
+      }
+      .card .value {
+        font-size: 2.5rem;
+        font-weight: bold;
+      }
+      .chart-container {
+        margin: 2rem 0;
       }
     </style>
   </head>
   <body>
-    <h1>분석 결과 📄</h1>
-    <div class="report-box">
-      <p>{{ report_content|safe }}</p>
-    </div>
-    <br />
-    <a href="/">↩️ 다른 티커 분석하기</a>
-    <p><small>주의: 분석 결과는 참고용이며 투자 권유가 아닙니다.</small></p>
+    <header>
+      <h1>📈 {{ data.ticker }} 옵션 분석 리포트</h1>
+      <h2>{{ data.strategy }}</h2>
+      <p>
+        <strong>만기일:</strong> {{ data.expiry_date }} |
+        <strong>현재가:</strong> ${{ data.current_price }}
+      </p>
+    </header>
+
+    <main>
+      <div class="grid-container">
+        <div class="card">
+          <h3>Put/Call Ratio</h3>
+          <p class="value">{{ data.market_sentiment.put_call_ratio }}</p>
+        </div>
+        <div class="card">
+          <h3>IV Skew</h3>
+          <p class="value">{{ data.market_sentiment.iv_skew_percent }}%</p>
+        </div>
+        <div class="card">
+          <h3>평균 변동성</h3>
+          <p class="value">{{ data.market_sentiment.mean_iv_percent }}%</p>
+        </div>
+        <div class="card">
+          <h3>데이터 신뢰도</h3>
+          <p class="value">{{ data.reliability.score }} / 1.0</p>
+          <small>{{ data.reliability.message }}</small>
+        </div>
+      </div>
+      <div class="chart-container">
+        <h3>미결제약정(OI) 및 거래량(Volume) 분포</h3>
+        <p>
+          <small
+            >💡 <strong>사용법:</strong> 드래그로 구간 선택 줌, 마우스 휠로 줌,
+            Shift+드래그로 패닝, 더블클릭으로 리셋</small
+          >
+        </p>
+        <canvas id="oiVolumeChart"></canvas>
+      </div>
+      <div class="grid-container">
+        <div class="card">
+          <h3>🔥 거래량 TOP 콜</h3>
+          <p class="value">${{ data.top_options.call.strike }}</p>
+          <p>
+            Volume: {{ data.top_options.call.volume }} | OI:
+            {{data.top_options.call.oi }}
+          </p>
+        </div>
+        <div class="card">
+          <h3>🔥 거래량 TOP 풋</h3>
+          <p class="value">${{ data.top_options.put.strike }}</p>
+          <p>
+            Volume: {{ data.top_options.put.volume }} | OI:
+            {{data.top_options.put.oi }}
+          </p>
+        </div>
+        {% if data.box_range.min and data.box_range.max %}
+        <div class="card" style="grid-column: 1 / -1">
+          <h3>📦 예상 박스권</h3>
+          <p class="value">
+            ${{ data.box_range.min }} ~ ${{ data.box_range.max }}
+          </p>
+        </div>
+        {% endif %}
+      </div>
+      <a href="/">↩️ 다른 티커 분석하기</a>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
+    <script>
+      document.addEventListener('DOMContentLoaded', function () {
+        const chartData = {{ data.chart_data | tojson }};
+        const currentPrice = {{ data.current_price }};
+
+          const ctx = document.getElementById('oiVolumeChart').getContext('2d');
+          new Chart(ctx, {
+              type: 'bar',
+              data: {
+                  labels: chartData.strikes,
+                  datasets: [
+                      {
+                          label: '콜 OI',
+                          data: chartData.call_oi,
+                          backgroundColor: 'rgba(75, 192, 192, 0.8)',
+                          borderColor: 'rgb(75, 192, 192)',
+                          yAxisID: 'y'
+                      },
+                      {
+                          label: '풋 OI',
+                          data: chartData.put_oi,
+                          backgroundColor: 'rgba(255, 99, 132, 0.8)',
+                          borderColor: 'rgb(255, 99, 132)',
+                          yAxisID: 'y'
+                      },
+                      {
+                          label: '콜 거래량',
+                          data: chartData.call_volume,
+                          type: 'line',
+                          yAxisID: 'y1',
+                          tension: 0.4,
+                          borderColor: 'rgb(54, 162, 235)'
+                      },
+                      {
+                          label: '풋 거래량',
+                          data: chartData.put_volume,
+                          type: 'line',
+                          yAxisID: 'y1',
+                          tension: 0.4,
+                          borderColor: 'rgb(255, 159, 64)'
+                      }
+                  ]
+              },
+              options: {
+                  responsive: true,
+                  interaction: {
+                      mode: 'index',
+                      intersect: false
+                  },
+                  scales: {
+                      x: {
+                          type: 'linear',
+                          display: true,
+                          stacked: true,
+                          title: {
+                              display: true,
+                              text: '행사가 (Strike Price)'
+                          }
+                      },
+                      y: {
+                          type: 'linear',
+                          display: true,
+                          position: 'left',
+                          title: {
+                              display: true,
+                              text: '미결제약정 (Open Interest)'
+                          },
+                          stacked: true
+                      },
+                      y1: {
+                          type: 'linear',
+                          display: true,
+                          position: 'right',
+                          grid: {
+                              drawOnChartArea: false
+                          },
+                          title: {
+                              display: true,
+                              text: '거래량 (Volume)'
+                          }
+                      }
+                  },
+                  plugins: {
+                      tooltip: {
+                          mode: 'index',
+                          intersect: false
+                      },
+                      annotation: {
+                          annotations: {
+                              currentPriceLine: {
+                                  type: 'line',
+                                  xMin: currentPrice,
+                                  xMax: currentPrice,
+                                  borderColor: 'rgb(10, 90, 86, 0.8)',
+                                  borderWidth: 3,
+                                  label: {
+                                    display: true,
+                                    content: `현재가: ${currentPrice}`,
+                                    position: 'start',
+                                    backgroundColor: 'rgba(255, 205, 86, 0.8)',
+                                    color: 'black',
+                                    font: {
+                                        weight: 'bold',
+                                        size: 12
+                                    }
+                                  }
+                                }
+                          }
+                      },
+                      zoom: {
+                          pan: {
+                              enabled: true,
+                              mode: 'x',
+                              modifierKey: 'shift',
+                          },
+                          zoom: {
+                              wheel: {
+                                  enabled: true,
+                              },
+                              pinch: {
+                                  enabled: true
+                              },
+                              drag: {
+                                  enabled: true,
+                                  backgroundColor: 'rgba(54, 162, 235, 0.3)',
+                                  borderColor: 'rgb(54, 162, 235)',
+                                  borderWidth: 1,
+                              },
+                              mode: 'x',
+                              onZoomComplete: function({chart}) {
+                                  console.log('줌 완료:', chart.scales.x.min, chart.scales.x.max);
+                              }
+                          },
+                          limits: {
+                              x: {min: 'original', max: 'original'},
+                              y: {min: 'original', max: 'original'},
+                              y1: {min: 'original', max: 'original'}
+                          }
+                      }
+                  }
+              }
+          });
+      });
+    </script>
   </body>
 </html>
